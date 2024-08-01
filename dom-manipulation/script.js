@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const quote = quotes[randomIndex];
       quoteDisplay.innerHTML = `<p>${quote.text}</p><p><em>Category: ${quote.category}</em></p>`;
     };
+    
   
     // Add new quote
     const addQuote = () => {
