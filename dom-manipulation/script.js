@@ -8,6 +8,48 @@ let quotes = JSON.parse(localStorage.getItem('quotes')) || [
 const quoteDisplay = document.getElementById('quoteDisplay');
 const newQuoteButton = document.getElementById('newQuote');
 const categoryFilter = document.getElementById('categoryFilter');
+const conflictNotification = document.getElementById('conflictNotification');
+
+// Simulate server interaction
+const fetchQuotesFromServer = async () => {
+  // Simulating a server fetch with a mock API (JSONPlaceholder)
+  const response = await fetch('https://jsonplaceholder.typicode.com/posts'); // Replace with your API
+  const serverQuotes = await response.json();
+  return serverQuotes.map(quote => ({
+    text: quote.title, // Adjust according to the actual API response structure
+    category: "General" // Default category for server quotes
+  }));
+};
+
+const syncWithServer = async () => {
+  const serverQuotes = await fetchQuotesFromServer();
+  const mergedQuotes = mergeQuotes(quotes, serverQuotes);
+  if (mergedQuotes.conflict) {
+    conflictNotification.innerText = "Data conflict detected! Server data has been prioritized.";
+  } else {
+    conflictNotification.innerText = "";
+  }
+  quotes = mergedQuotes.data;
+  localStorage.setItem('quotes', JSON.stringify(quotes));
+  filterQuotes();
+};
+
+const mergeQuotes = (local, server) => {
+  let conflict = false;
+  const merged = [...local];
+
+  server.forEach(serverQuote => {
+    const existingIndex = local.findIndex(localQuote => localQuote.text === serverQuote.text);
+    if (existingIndex !== -1) {
+      conflict = true; // Conflict detected
+      merged[existingIndex] = serverQuote; // Server data takes precedence
+    } else {
+      merged.push(serverQuote);
+    }
+  });
+
+  return { data: merged, conflict };
+};
 
 // Show a random quote
 const showRandomQuote = () => {
@@ -109,6 +151,7 @@ const filterQuotes = () => {
 // Initialize
 populateCategories();
 filterQuotes();
+setInterval(syncWithServer, 10000); // Sync with server every 10 seconds
 
 // Event listeners
 newQuoteButton.addEventListener('click', showRandomQuote);
